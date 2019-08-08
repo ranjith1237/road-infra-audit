@@ -1,3 +1,4 @@
 weights/*
 src/__pycache__/
 src/test.jpg
+src/signboard_features/*.jpg
