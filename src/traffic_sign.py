@@ -1,36 +1,10 @@
-
-# coding: utf-8
-
-# In[26]:
-
-
 import h5py
 f = h5py.File('/Neutron6/ranjith.reddy/traffic_signs/model_22_classes_batch8.h5', 'r')
 print(f.attrs.get('keras_version'))
-
-
-# In[27]:
-
-
 import keras
-
-
-# In[28]:
-
-
 import warnings
 warnings.filterwarnings("ignore")
-
-
-# In[29]:
-
-
 keras.__version__
-
-
-# In[30]:
-
-
 import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
 config = tf.ConfigProto()
@@ -42,9 +16,6 @@ import numpy as np
 import json
 from skimage import io, color, exposure, transform
 import pdb
-
-# In[31]:
-
 
 def preprocess_img(img):
     # Histogram normalization in y
@@ -67,11 +38,6 @@ def preprocess_img(img):
 
     return img
 
-
-# In[32]:
-
-
-#from __future__ import division
 import time
 import torch 
 import torch.nn as nn
@@ -86,14 +52,6 @@ import random
 import pickle as pkl
 import argparse
 import pdb
-
-# !python video_demo.py --video ../pc_30sl.mp4 --cfg ../darknet_orig/darknet/cfg/tad_yolov3_5.cfg --weights ../darknet_orig/darknet/backup/tad_yolov3_5_6000.weights
-
-# !nvidia-smi
-
-# In[33]:
-
-
 
 def get_test_input(input_dim, CUDA):
     img = cv2.imread("dog-cycle-car.png")
@@ -123,7 +81,6 @@ def prep_image(img, inp_dim):
     return img_, orig_im, dim
 
 def write(x, img, cls_id):
-    #pdb.set_trace()
     c1 = tuple(x[1:3].int())
     c2 = tuple(x[3:5].int())
     cls = int(x[-1])
@@ -139,15 +96,6 @@ def write(x, img, cls_id):
         #cv2.rectangle(img, c1, c2,color, -1)
         #cv2.putText(img, label, (c1[0], c1[1] + 30), cv2.FONT_HERSHEY_PLAIN, 1, [255,255,255], 1);
         return img, c1, c2, cls_id
-
-
-# In[34]:
-
-
-#get_ipython().system('pwd')
-
-
-# In[35]:
 
 
 cfgfile = '/Neutron6/ranjith.reddy/traffic_signs/tad_yolov3_5.cfg'
@@ -179,10 +127,6 @@ if CUDA:
 model.eval()
 
 
-
-# In[36]:
-
-
 classes_gtsrb = ['Speed Limit 20',
 'Speed Limit 30',
 'Speed Limit 40',
@@ -210,24 +154,10 @@ classes_gtsrb = ['Speed Limit 20',
 'Person Light',
 'Yellow Light',
 'Not a Sign'
-                ]
-
-
-# In[37]:
-
+]
 
 classes_gtsrb[26]
-
-
-# In[38]:
-
-
 from bbox import get_abs_coord
-
-
-# In[39]:
-
-
 def detect_sign(file_name, picName):
     frame_url = file_name
     frame = cv2.imread(frame_url)
@@ -300,41 +230,18 @@ def detect_sign(file_name, picName):
             return None, frame_rgb
         return np.array(_outputs_), frame_rgb
 
-
-# In[51]:
-
-
-#videopath = '/Users/raghavamodhugu/Downloads/2019-06-28_16_04_53.mp4'
-#videopath = '/home/raghava.modhugu/Projects/Traffic_infra_audit/infra_audit_presentation/DEMO_VIDEO1.mp4'
 videopath="/Neutron6/ranjith.reddy/traffic_signs/pytorch-yolo-v3/2019-07-03-13-25-01/Video/capture.mp4"
-
-#get_ipython().run_line_magic('pylab', 'inline')
 import cv2
 from IPython.display import clear_output
 from PIL import Image
-
-
-# In[52]:
-
 import pdb
-
-# In[53]:
-
 classes = ["traffic sign", "traffic sign"]
-
-# In[54]:
 from collections import defaultdict
 def a():
     return []
 d = defaultdict(a)
 
-
-# In[66]:
-#import tqdm
 import time
-# In[70]:
-
-
 img_size=416
 conf_thres=0.8
 nms_thres=0.4
@@ -343,7 +250,6 @@ colors = [cmap(i)[:3] for i in np.linspace(0, 1, 20)]
 
 # initialize Sort object and video capture
 from sort import *
-#out = cv2.VideoWriter('detected_sign.mp4',cv2.VideoWriter_fourcc('M','J','P','G'), 24, (1920,1080))
 vid = cv2.VideoCapture(videopath)
 print("FPS {}".format(vid.get(cv2.CAP_PROP_FPS)))
 mot_tracker = Sort() 
