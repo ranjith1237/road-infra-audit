@@ -2,3 +2,4 @@ weights/*
 src/__pycache__/
 src/test.jpg
 src/signboard_features/*.jpg
+src/Lane_Marking/__pycache__
