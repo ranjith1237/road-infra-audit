@@ -143,7 +143,7 @@ def detect_sign(file_name,confidence,inp_dim,CUDA,model,num_classes,nms_thesh,cl
 
 
 
-def traffic_detector(frame_num,img,preloaded_params):
+def streetlight_detector(frame_num,img,preloaded_params):
     num_classes = preloaded_params['num_classes']
     confidence = preloaded_params['confidence']
     nms_thesh = preloaded_params['nms_thesh']
@@ -152,7 +152,7 @@ def traffic_detector(frame_num,img,preloaded_params):
     model.net_info["height"] = preloaded_params['reso']
     inp_dim = preloaded_params['inp_dim']
     classes_gtsrb = preloaded_params['classes_gtsrb']
-    classes = ["traffic sign", "traffic sign"]
+
     from collections import defaultdict
     def a():
         return []
@@ -189,7 +189,7 @@ def traffic_detector(frame_num,img,preloaded_params):
         fig=plt.figure(figsize=(12, 8))
         plt.title("Video Stream {}".format(i))
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        cv2.imwrite('test_new_route/img{}.jpg'.format(i), img)
+        cv2.imwrite('streetlight_Images/img{}.jpg'.format(i), img)
     except Exception as e:
         print(e)
 
