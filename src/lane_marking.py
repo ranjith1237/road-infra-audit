@@ -6,14 +6,12 @@ from utils.prob2lines import getLane
 from utils.transforms import *
 from collections import defaultdict
 
-def segment_lanes(count,img,preloaded_params):
+def segment_lanes(frame_num,img,preloaded_params):
+    out_path = preloaded_params['out_path']
+    lane_mark_frames = preloaded_params['lane_mark_frames']
     net=preloaded_params['net']
     transform=preloaded_params['transform']
     device=preloaded_params['device']
-    def a():
-        return []
-    
-    d = defaultdict(a)
     x = transform(img)[0]
     x.unsqueeze_(0)
     x=x.to(device)
@@ -28,10 +26,15 @@ def segment_lanes(count,img,preloaded_params):
     for i in range(0, 4):
         if exist_pred[0, i] > 0.5:
             lane_img[coord_mask == (i + 1)] = color[i]
-    img = cv2.addWeighted(src1=lane_img, alpha=0.8, src2=img, beta=1., gamma=0.)
+    img = cv2.addWeighted(src1=lane_img, alpha=0.4, src2=img, beta=1., gamma=0.)
     grayImage = cv2.cvtColor(lane_img, cv2.COLOR_BGR2GRAY)
     coverage_score = np.sum(grayImage!=0)/(np.sum(grayImage!=0)+np.sum(grayImage==0))
     print("coverage score --> ",coverage_score)
-    d[count].append(coverage_score)
-    #cv2.imwrite("result/img{}.jpg".format(count), img)
-    print("Frame Number {}".format(count))
+    with open(out_path+'/coverage_score.json','r') as f:
+        d = json.load(f)
+    with open(out_path+'/coverage_score.json','w') as f:
+        d[frame_num] = coverage_score
+        json.dump(d,f)
+    cv2.imwrite(lane_mark_frames+"/img{}.jpg".format(frame_num), img)
+    print("Frame Number {}".format(frame_num))
+    return img

@@ -29,6 +29,7 @@ import pickle as pkl
 import argparse
 from sort import *
 from bbox import get_abs_coord
+import glob
 
 def preprocess_img(img):
     # Histogram normalization in y
@@ -144,6 +145,8 @@ def detect_sign(file_name,confidence,inp_dim,CUDA,model,num_classes,nms_thesh,cl
 
 
 def traffic_detector(frame_num,img,preloaded_params):
+    traffic_sign_frames = preloaded_params['traffic_sign_frames']
+    out_path = preloaded_params['out_path']
     num_classes = preloaded_params['num_classes']
     confidence = preloaded_params['confidence']
     nms_thesh = preloaded_params['nms_thesh']
@@ -168,30 +171,41 @@ def traffic_detector(frame_num,img,preloaded_params):
     frame = img
     cv2.imwrite('test.jpg', frame)
     try:
+        tracked_objects=[]
         detections, img = detect_sign('test.jpg',confidence,inp_dim,CUDA,model,num_classes,nms_thesh,classes_gtsrb)
         if detections is not None:
             tracked_objects = mot_tracker.update(detections)
 
             unique_labels = np.unique(detections[:, -1])
             n_cls_preds = len(unique_labels)
+            print("tracked_objects==> ",tracked_objects)
             for x1, y1, x2, y2, obj_id, cls_pred in tracked_objects:
                 try:
                     color_ = colors[int(obj_id) % len(colors)]
                     color_ = [ij * 255 for ij in color_]
                     cls = classes_gtsrb[int(cls_pred)]
-                    cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), color_, 4)
+                    print((int(x1), int(y1)), (int(x2), int(y2)))
+                    cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (255,0,0), 4)
                     cv2.putText(img, "Traffic Sign", (int(x2), int(y2) + 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (178,34,34), 3)
-                    d[i].append(int(obj_id))
-                    with open("gps_frames.json","w") as f:
+                    with open(out_path+"/traffic_sign.json","r") as f:
+                        d = json.load(f)
+                    with open(out_path+"/traffic_sign.json","w") as f:
+                        object_detected_id = int(obj_id)
+                        if object_detected_id not in d:
+                            d[object_detected_id] = [i]
+                        else:
+                            d[object_detected_id].append(i)
                         json.dump(d,f)
                 except Exception as e:
                     print(e)
         fig=plt.figure(figsize=(12, 8))
         plt.title("Video Stream {}".format(i))
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        cv2.imwrite('test_new_route/img{}.jpg'.format(i), img)
+        cv2.imwrite(traffic_sign_frames+'/img{}.jpg'.format(i), img)
+        return tracked_objects
     except Exception as e:
         print(e)
+    return []
 
 
 
@@ -226,11 +240,25 @@ def preload_trafficsigns(cfgfile,weightsfile):
             'num_classes':num_classes,
             'confidence':confidence,
             'nms_thesh':nms_thesh,
-            'inp_dim':inp_dim
+            'inp_dim':inp_dim,
+            'classes_gtsrb':classes_gtsrb
         }
         
 
 if __name__ == "__main__":
+    all_frames = glob.glob('./Traffic_Frames/*.png')
+    print(all_frames)
+    videoPath="/Neutron6/ranjith.reddy/2019-07-06-14-58-06/Video/cap15.mp4"
     cfgfile = '/Neutron6/ranjith.reddy/traffic_signs/tad_yolov3_5.cfg'
     weightsfile = '/Neutron6/ranjith.reddy/traffic_signs/tad_yolov3_5_6000.weights'
-    preload_trafficsigns(cfgfile,weightsfile)
+    preloaded_params_signs=preload_trafficsigns(cfgfile,weightsfile)
+    vid = cv2.VideoCapture(videoPath)
+    fps = vid.get(cv2.CAP_PROP_FPS)
+    print("FPS:{}".format(fps))
+    frame_num=0
+    while vid.isOpened():
+        frame_num+=1
+        ret, image = vid.read()
+        image = cv2.imread(all_frames[frame_num])
+        print(image)
+        traffic_detector(frame_num,image,preloaded_params_signs)

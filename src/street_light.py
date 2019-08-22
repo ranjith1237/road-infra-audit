@@ -144,6 +144,8 @@ def detect_sign(file_name,confidence,inp_dim,CUDA,model,num_classes,nms_thesh,cl
 
 
 def streetlight_detector(frame_num,img,preloaded_params):
+    street_light_frames = preloaded_params['street_light_frames']
+    out_path = preloaded_params['out_path']
     num_classes = preloaded_params['num_classes']
     confidence = preloaded_params['confidence']
     nms_thesh = preloaded_params['nms_thesh']
@@ -180,16 +182,22 @@ def streetlight_detector(frame_num,img,preloaded_params):
                     color_ = [ij * 255 for ij in color_]
                     cls = classes_gtsrb[int(cls_pred)]
                     cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), color_, 4)
-                    cv2.putText(img, "Traffic Sign", (int(x2), int(y2) + 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (178,34,34), 3)
-                    d[i].append(int(obj_id))
-                    with open("gps_frames.json","w") as f:
+                    cv2.putText(img, "street light", (int(x2), int(y2) + 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (178,34,34), 3)
+                    with open(out_path+"/street_light.json","r") as f:
+                        d = json.load(f)
+                    with open(out_path+"/street_light.json","w") as f:
+                        object_detected_id = int(obj_id)
+                        if object_detected_id not in d:
+                            d[object_detected_id] = [i]
+                        else:
+                            d[object_detected_id].append(i)
                         json.dump(d,f)
                 except Exception as e:
                     print(e)
         fig=plt.figure(figsize=(12, 8))
         plt.title("Video Stream {}".format(i))
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        cv2.imwrite('streetlight_Images/img{}.jpg'.format(i), img)
+        cv2.imwrite(street_light_frames+'/img{}.jpg'.format(i), img)
     except Exception as e:
         print(e)
 
@@ -197,7 +205,7 @@ def streetlight_detector(frame_num,img,preloaded_params):
 
 def preload_trafficsigns(cfgfile,weightsfile):
     reso = 416
-    num_classes = 5
+    num_classes = 1
 
     confidence = 0.5
     nms_thesh = 0.4
@@ -226,11 +234,22 @@ def preload_trafficsigns(cfgfile,weightsfile):
             'num_classes':num_classes,
             'confidence':confidence,
             'nms_thesh':nms_thesh,
-            'inp_dim':inp_dim
+            'inp_dim':inp_dim,
+            'classes_gtsrb':classes_gtsrb
         }
         
 
 if __name__ == "__main__":
+    videoPath="/Neutron6/ranjith.reddy/Road-Infrastructure/src/Demo.mp4"
     cfgfile = '/Neutron6/ranjith.reddy/traffic_signs/tad_yolov3_5.cfg'
     weightsfile = '/Neutron6/ranjith.reddy/traffic_signs/tad_yolov3_5_6000.weights'
-    preload_trafficsigns(cfgfile,weightsfile)
+    preloaded_params_lights=preload_trafficsigns(cfgfile,weightsfile)
+    vid = cv2.VideoCapture(videoPath)
+    fps = vid.get(cv2.CAP_PROP_FPS)
+    print("FPS:{}".format(fps))
+    frame_num=0
+    while vid.isOpened():
+        frame_num+=1
+        ret, image = vid.read()
+        print("****** ",frame_num)
+        streetlight_detector(frame_num,image,preloaded_params_lights)
