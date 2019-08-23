@@ -56,7 +56,6 @@ class Detector:
         if tracked_objects is not None:
             for x1, y1, x2, y2, obj_id, cls_pred in tracked_objects:
                 try:
-                    print(int(x1),int(x2),int(y1),int(y2),frame_num)
                     img_crop = self.img[int(y1):int(y2),int(x1):int(x2),:]
                     sign_attribute_pred = self.classify_SignAttribute(frame_num,img_crop,preloaded_params_attributes)
                     attr_name = self.get_attribute_name(sign_attribute_pred)
@@ -264,7 +263,7 @@ def preload_TrafficSignsAttributes():
 
 
 if __name__ == "__main__":
-    folder_path = "/Neutron6/ranjith.reddy/traffic_signs/pytorch-yolo-v3/Captures/2019-07-27-09-27-21"
+    folder_path = "/Neutron6/ranjith.reddy/traffic_signs/pytorch-yolo-v3/Captures/2019-07-27-17-01-07"
     _id = folder_path.split('/')[-1]
     videoPath=os.path.join(folder_path,"Video/capture.mp4")
     out_path = "/Neutron6/ranjith.reddy/Road-Infrastructure/experiments"
@@ -300,7 +299,8 @@ if __name__ == "__main__":
     detector = Detector(image,out_path)
     while vid.isOpened():
         frame_num+=1
-        print("frame num*** ",frame_num)
+        if frame_num%100==0:
+            print("frame num*** ",frame_num)
         ret, image = vid.read()
         if image is None:
             continue

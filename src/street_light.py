@@ -75,9 +75,7 @@ def write(x, img, cls_id,classes_gtsrb):
         #cv2.rectangle(img, c1, c2,color, -1)
         #cv2.putText(img, label, (c1[0], c1[1] + 30), cv2.FONT_HERSHEY_PLAIN, 1, [255,255,255], 1);
         return img, c1, c2, cls_id
-def detect_sign(file_name,confidence,inp_dim,CUDA,model,num_classes,nms_thesh,classes_gtsrb):
-    frame_url = file_name
-    frame = cv2.imread(frame_url)
+def detect_sign(frame,confidence,inp_dim,CUDA,model,num_classes,nms_thesh,classes_gtsrb):
     try:
         b,g,r = cv2.split(frame)       # get b,g,r
         frame_rgb = cv2.merge([r,g,b])     # switch it to rgb
@@ -168,9 +166,8 @@ def streetlight_detector(frame_num,img,preloaded_params):
     mot_tracker = Sort() 
     i = frame_num
     frame = img
-    cv2.imwrite('test.jpg', frame)
     try:
-        detections, img = detect_sign('test.jpg',confidence,inp_dim,CUDA,model,num_classes,nms_thesh,classes_gtsrb)
+        detections, img = detect_sign(frame,confidence,inp_dim,CUDA,model,num_classes,nms_thesh,classes_gtsrb)
         if detections is not None:
             tracked_objects = mot_tracker.update(detections)
 
@@ -194,10 +191,10 @@ def streetlight_detector(frame_num,img,preloaded_params):
                         json.dump(d,f)
                 except Exception as e:
                     print(e)
-        fig=plt.figure(figsize=(12, 8))
-        plt.title("Video Stream {}".format(i))
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        cv2.imwrite(street_light_frames+'/img{}.jpg'.format(i), img)
+        #fig=plt.figure(figsize=(12, 8))
+        #plt.title("Video Stream {}".format(i))
+            #img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            #cv2.imwrite(street_light_frames+'/img{}.jpg'.format(i), img)
     except Exception as e:
         print(e)
 
@@ -251,5 +248,4 @@ if __name__ == "__main__":
     while vid.isOpened():
         frame_num+=1
         ret, image = vid.read()
-        print("****** ",frame_num)
         streetlight_detector(frame_num,image,preloaded_params_lights)

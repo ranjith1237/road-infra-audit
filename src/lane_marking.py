@@ -29,12 +29,10 @@ def segment_lanes(frame_num,img,preloaded_params):
     img = cv2.addWeighted(src1=lane_img, alpha=0.4, src2=img, beta=1., gamma=0.)
     grayImage = cv2.cvtColor(lane_img, cv2.COLOR_BGR2GRAY)
     coverage_score = np.sum(grayImage!=0)/(np.sum(grayImage!=0)+np.sum(grayImage==0))
-    print("coverage score --> ",coverage_score)
     with open(out_path+'/coverage_score.json','r') as f:
         d = json.load(f)
     with open(out_path+'/coverage_score.json','w') as f:
         d[frame_num] = coverage_score
         json.dump(d,f)
-    cv2.imwrite(lane_mark_frames+"/img{}.jpg".format(frame_num), img)
-    print("Frame Number {}".format(frame_num))
+    #cv2.imwrite(lane_mark_frames+"/img{}.jpg".format(frame_num), img)
     return img
