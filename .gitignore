@@ -1,5 +1,10 @@
 weights/*
+experiments/*
 src/__pycache__/
-src/test.jpg
-src/signboard_features/*.jpg
+*.out
+*.png
+*.jpg
+*.jpeg
+*.mp4
 src/Lane_Marking/__pycache__
+scripts/junk/*
