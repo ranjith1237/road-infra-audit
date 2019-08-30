@@ -27,7 +27,6 @@ from preprocess import prep_image, inp_to_image, letterbox_image
 import random
 import pickle as pkl
 import argparse
-from sort import *
 from bbox import get_abs_coord
 
 def preprocess_img(img):
@@ -143,6 +142,7 @@ def detect_sign(frame,confidence,inp_dim,CUDA,model,num_classes,nms_thesh,classe
 
 def streetlight_detector(frame_num,img,preloaded_params):
     street_light_frames = preloaded_params['street_light_frames']
+    mot_tracker = preloaded_params['mot_tracker']
     out_path = preloaded_params['out_path']
     num_classes = preloaded_params['num_classes']
     confidence = preloaded_params['confidence']
@@ -163,14 +163,14 @@ def streetlight_detector(frame_num,img,preloaded_params):
 
     # initialize Sort object and video capture
 
-    mot_tracker = Sort() 
+    #mot_tracker = Sort() 
     i = frame_num
     frame = img
     try:
         detections, img = detect_sign(frame,confidence,inp_dim,CUDA,model,num_classes,nms_thesh,classes_gtsrb)
         if detections is not None:
             tracked_objects = mot_tracker.update(detections)
-
+            
             unique_labels = np.unique(detections[:, -1])
             n_cls_preds = len(unique_labels)
             for x1, y1, x2, y2, obj_id, cls_pred in tracked_objects:
@@ -184,10 +184,10 @@ def streetlight_detector(frame_num,img,preloaded_params):
                         d = json.load(f)
                     with open(out_path+"/street_light.json","w") as f:
                         object_detected_id = int(obj_id)
-                        if object_detected_id not in d:
-                            d[object_detected_id] = [i]
+                        if str(object_detected_id) not in d:
+                            d[str(object_detected_id)] = [frame_num]
                         else:
-                            d[object_detected_id].append(i)
+                            d[str(object_detected_id)].append(frame_num)
                         json.dump(d,f)
                 except Exception as e:
                     print(e)

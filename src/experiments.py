@@ -9,7 +9,7 @@ from utils.prob2lines import getLane
 from utils.transforms import *
 import time
 from collections import defaultdict
-
+from sort import *
 #traffic signs darknet yolo
 from darknet import Darknet
 from traffic_sign import traffic_detector
@@ -26,6 +26,8 @@ class Detector:
         self.street_light_frames = os.path.join(self.out_path,'street_light_frames')
         self.traffic_sign_frames = os.path.join(self.out_path,'traffic_sign_frames')
         self.lane_mark_frames = os.path.join(self.out_path,'lane_mark_frames')
+        self.mot_tracker_ts = Sort()
+        self.mot_tracker_st = Sort()
         try:
             os.mkdir(self.street_light_frames)
         except:
@@ -52,6 +54,7 @@ class Detector:
         attribute_data={}
         preloaded_params['out_path']=self.out_path
         preloaded_params['traffic_sign_frames']=self.traffic_sign_frames
+        preloaded_params['mot_tracker'] = self.mot_tracker_ts
         tracked_objects = traffic_detector(frame_num,self.img,preloaded_params)
         if tracked_objects is not None:
             for x1, y1, x2, y2, obj_id, cls_pred in tracked_objects:
@@ -63,10 +66,10 @@ class Detector:
                         attribute_data = json.load(fp)
                     with open(self.out_path+'/attribute_data.json','w') as fp:
                         object_detected_id = int(obj_id)
-                        if object_detected_id not in attribute_data:
-                            attribute_data[int(obj_id)]=[[int(x1), int(y1),int(x2),int(y2),frame_num,attr_name]]
+                        if str(object_detected_id) not in attribute_data:
+                            attribute_data[str(object_detected_id)]=[[int(x1), int(y1),int(x2),int(y2),frame_num,attr_name]]
                         else:
-                            attribute_data[int(obj_id)].append([int(x1), int(y1),int(x2),int(y2),frame_num,attr_name])
+                            attribute_data[str(object_detected_id)].append([int(x1), int(y1),int(x2),int(y2),frame_num,attr_name])
                         json.dump(attribute_data,fp)
                     cv2.rectangle(self.img, (int(x1), int(y1)), (int(x2), int(y2)), (255,0,0), 4)
                     cv2.putText(self.img, attr_name, (int(x2), int(y2)), cv2.FONT_HERSHEY_SIMPLEX, 1, (178,34,34), 3)
@@ -80,6 +83,7 @@ class Detector:
     def detect_Streetlight(self,frame_num,preloaded_params):
         preloaded_params['out_path']=self.out_path
         preloaded_params['street_light_frames']=self.street_light_frames
+        preloaded_params['mot_tracker'] = self.mot_tracker_ts
         streetlight_detector(frame_num,self.img,preloaded_params)
 
     def detect_LaneMarking(self,frame_num,preloaded_params):
@@ -88,57 +92,6 @@ class Detector:
         segment_lanes(frame_num, self.img,preloaded_params)
 
 
-def preload_lanemarking(weights_path):
-    net = SCNN(pretrained=False)
-    mean=(0.3598, 0.3653, 0.3662)
-    std=(0.2573, 0.2663, 0.2756)
-    transform = Compose(Resize((800, 288)), ToTensor(),
-                    Normalize(mean=mean, std=std))
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    save_dict = torch.load(weights_path, map_location='cpu')
-    net.load_state_dict(save_dict['net'])
-    net.eval()
-    net.to(device)
-    return {
-            'net':net,
-            'transform':transform,
-            'device':device
-        }
-
-def preload_trafficsigns(cfgfile,weightsfile):
-    reso = 416
-    num_classes = 5
-
-    confidence = 0.5
-    nms_thesh = 0.4
-
-
-    CUDA = torch.cuda.is_available()
-
-    print("Loading network.....")
-    model = Darknet(cfgfile)
-    model.load_weights(weightsfile)
-    print("Network successfully loaded")
-
-    model.net_info["height"] = reso
-    inp_dim = int(model.net_info["height"])
-
-    if CUDA:
-        model.cuda()
-
-    model.eval()
-    classes_gtsrb = ['Speed Limit 20','Speed Limit 30','Speed Limit 40','Speed Limit 50','Speed Limit 60','Speed Limit 80','Speed Limit 100','Stop','No Entry','Compulsory Ahead Only','Compulsory Keep Left','Compulsory Keep Right','Compulsory Turn Right Ahead','Compulsory Turn Left Ahead','Compulsory Ahead or Turn Left','Compulsory Ahead or Turn Right','Give Way','Pedestrian Crossings','Hump or Rough Roads','Narrow Road Ahead','Roundabout','School Ahead','Red Light','Green Light','Person Light','Yellow Light','Not a Sign']
-    classes_gtsrb[26]
-    return {
-            'CUDA':CUDA,
-            'model':model,
-            'reso':reso,
-            'num_classes':num_classes,
-            'confidence':confidence,
-            'nms_thesh':nms_thesh,
-            'inp_dim':inp_dim,
-            'classes_gtsrb':classes_gtsrb
-        }
 
 def preload_lanemarking(weights_path):
     net = SCNN(pretrained=False)
@@ -163,7 +116,6 @@ def preload_trafficsigns(cfgfile,weightsfile):
 
     confidence = 0.5
     nms_thesh = 0.4
-
 
     CUDA = torch.cuda.is_available()
 
@@ -198,7 +150,6 @@ def preload_streetlights(cfgfile,weightsfile):
 
     confidence = 0.4
     nms_thesh = 0.2
-
 
     CUDA = torch.cuda.is_available()
 
@@ -273,9 +224,11 @@ if __name__ == "__main__":
     cfgfile_streetlights = '/Neutron6/ranjith.reddy/Road-Infrastructure/weights/streetlights.cfg'
     weightsfile_yolostreetlight = '/Neutron6/ranjith.reddy/Road-Infrastructure/weights/streetlights_best.weights'
     preloaded_params_lights=preload_streetlights(cfgfile_streetlights,weightsfile_yolostreetlight)
-    g_path = "/Neutron6/ranjith.reddy/Data/2019-08-16"
+    g_path = "/Neutron6/ranjith.reddy/Data/2019-08-29"
     all_folders = glob.glob(g_path+"/*")
+    print("all folders==> ",all_folders)
     for folder_path in all_folders:
+        print("started $$$$$$ ",folder_path)
         #folder_path = "/Neutron6/ranjith.reddy/traffic_signs/pytorch-yolo-v3/Captures/2019-07-14-10-43-16"
         _id = folder_path.split('/')[-1]
         videoPath=os.path.join(folder_path,"Video/capture.mp4")
@@ -294,7 +247,7 @@ if __name__ == "__main__":
             json.dump({},f3)
         with open(out_path+"/coverage_score.json","w") as f4:
             json.dump({},f4)
-        
+
         
         vid = cv2.VideoCapture(videoPath)
         fps = vid.get(cv2.CAP_PROP_FPS)
